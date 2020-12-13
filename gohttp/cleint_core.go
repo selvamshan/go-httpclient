@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/xml"
 	"encoding/json"
+	"io/ioutil"
 	"errors"
 	"strings"
 	"net/http"
@@ -20,7 +21,7 @@ const (
 )
 
 
-func (c *httpClient) do(method string, url string, headers http.Header, body interface{}) (*http.Response, error) {
+func (c *httpClient) do(method string, url string, headers http.Header, body interface{}) (*Response, error) {
 	
 	//client := http.Client{}
 
@@ -40,8 +41,25 @@ func (c *httpClient) do(method string, url string, headers http.Header, body int
 	
 	client := c.getHttpClient()
 
-    return client.Do(request)
+	response, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
 
+	defer response.Body.Close()
+	responseBody, err := ioutil.ReadAll(response.Body)
+	if err != nil{
+		return nil, err
+	}
+
+	finalResponse := &Response{
+		status : response.Status,
+		statusCode : response.StatusCode,
+		headers : response.Header,
+		body: responseBody,
+	}
+
+	return finalResponse, nil
 }
 
 func (c *httpClient) getHttpClient() *http.Client{
